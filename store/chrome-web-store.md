@@ -7,7 +7,7 @@ Build the upload file with `npm run build:extension`. It writes `dist/good-promp
 ## Before you submit
 
 - [ ] Test the in-page button on **ChatGPT**, **Claude** and **Gemini**: type a rough prompt, click the round button above the box, check the rewrite lands, click again to undo. Only list a site in the description once it works there.
-- [ ] Replace `[CONTACT EMAIL]` in `public/privacy.html` and `public/index.html`, and deploy. Google rejects listings whose privacy policy has placeholders.
+- [x] Contact email filled in on the privacy policy and landing page. Deploy before submitting.
 - [ ] Update the landing page's Privacy pop-up. It still says the extension has no page access until you click, which is no longer true on ChatGPT, Claude and Gemini.
 - [ ] Take the screenshots (see Graphic assets).
 - [ ] Register the developer account and verify the contact email in the console.
@@ -77,7 +77,8 @@ Do not show another person's conversation or any private text in a screenshot.
 | Field | Value |
 | --- | --- |
 | Homepage URL | https://www.goodprompts.co/ |
-| Support URL | https://www.goodprompts.co/ (or a support email once you have one) |
+| Support URL | https://www.goodprompts.co/ |
+| Support email | hello@goodprompts.co |
 
 ## Privacy practices
 

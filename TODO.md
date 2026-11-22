@@ -16,6 +16,6 @@
 - [x] Added `privacy.html` at `/privacy`, linked from the page, the Privacy pop-up and the waitlist pop-up.
 - [x] Small text raised to 11.5px or larger and greys darkened to a contrast of at least 4.5:1.
 - [x] The dots now fade out around the words (measured from the page layout), and on portrait screens the hands sit in the gap between the copy and the footer, so dots never cover text.
-- [ ] Replace `[CONTACT EMAIL]` in `public/index.html` and `public/privacy.html`.
+- [x] Contact email filled in on `public/index.html` and `public/privacy.html`.
 - [ ] On Vercel, add a Neon Postgres database (sets `DATABASE_URL`) and confirm a test sign-up is saved.
 - [x] Product name set to "Good Prompts" (earlier names: "Promptimizer", then "Senno").
