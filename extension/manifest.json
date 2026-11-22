@@ -1,21 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Good Prompts",
-  "version": "0.2.0",
-  "description": "Rewrites the prompt in the focused text box with one click. You still press send.",
+  "version": "1.0.0",
+  "description": "Turn a rough prompt into a clear one in one click, right in the chat box. Nothing invented. You still press send.",
+  "homepage_url": "https://www.goodprompts.co/",
   "minimum_chrome_version": "120",
-  "permissions": [
-    "activeTab",
-    "scripting",
-    "storage",
-    "clipboardWrite"
-  ],
-  "host_permissions": [
-    "https://www.goodprompts.co/*"
-  ],
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "action": {
     "default_title": "Rewrite prompt with Good Prompts",
@@ -25,6 +19,32 @@
       "48": "icons/icon48.png"
     }
   },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://www.goodprompts.co/*"
+  ],
   "commands": {
     "_execute_action": {
       "suggested_key": {
@@ -37,31 +57,5 @@
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true
-  },
-  "icons": {
-    "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://chatgpt.com/*",
-        "https://chat.openai.com/*",
-        "https://claude.ai/*",
-        "https://gemini.google.com/*",
-        "https://www.perplexity.ai/*",
-        "https://manus.im/*",
-        "https://grok.com/*",
-        "https://copilot.microsoft.com/*",
-        "https://chat.deepseek.com/*",
-        "https://www.meta.ai/*"
-      ],
-      "js": [
-        "content.js"
-      ],
-      "run_at": "document_idle"
-    }
-  ]
+  }
 }

@@ -484,7 +484,8 @@
   // box has text in it. It lives in its own shadow root on the page's root element, so it never
   // touches the site's own markup or its editor. Styled through the CSSOM only (strict CSP safe).
 
-  const BUTTON_HOSTS = /(^|\.)(chatgpt\.com|chat\.openai\.com|claude\.ai|gemini\.google\.com|perplexity\.ai|manus\.im|grok\.com|copilot\.microsoft\.com|chat\.deepseek\.com|meta\.ai)$/;
+  // The sites where the button appears. Keep this in step with content_scripts in manifest.json.
+  const BUTTON_HOSTS = /(^|\.)(chatgpt\.com|chat\.openai\.com|claude\.ai|gemini\.google\.com)$/;
   const BUTTON_SIZE = 28;
   let pill = null;        // { host, button, icon }
   let pillField = null;   // the message box the button belongs to

@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "node dev-server.js",
-    "check": "node --check dev-server.js && node --check lib/db.js && node --check lib/handlers.js && node --check lib/rewrite-engine.js && node --check extension/background.js && node --check extension/content.js && node --check extension/options.js"
+    "check": "node --check dev-server.js && node --check lib/db.js && node --check lib/handlers.js && node --check lib/rewrite-engine.js && node --check extension/background.js && node --check extension/content.js && node --check extension/options.js",
+    "build:extension": "node -e \"const v=require('./extension/manifest.json').version;const {execSync}=require('child_process');execSync('rm -rf dist && mkdir -p dist');execSync('cd extension && zip -r -X -q ../dist/good-prompts-'+v+'.zip . -x dev-test.html -x .DS_Store -x \\\"*/.DS_Store\\\"');console.log('dist/good-prompts-'+v+'.zip')\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",

@@ -42,6 +42,7 @@
       header { padding:22px 18px 0; }
       main { padding:48px 18px 72px; }
     }
+      main h3 { margin:22px 0 8px; font-size:14px; font-weight:600; letter-spacing:-.01em; }
   </style>
 </head>
 <body>
@@ -53,7 +54,7 @@
   <main>
     <p class="kicker">Privacy policy</p>
     <h1>What we keep,<br>and why.</h1>
-    <p class="lede">This page covers the Good Prompts website and its early-access waitlist. The short version: if you join the waitlist we keep your email address, and we use it only to write to you about Good Prompts.</p>
+    <p class="lede">This page covers the Good Prompts website, its waitlist and the Good Prompts Chrome extension. The short version: if you join the waitlist we keep your email address. When you ask for a rewrite, your prompt is sent to us to be rewritten and is not stored.</p>
 
     <section>
       <h2>Who runs this site</h2>
@@ -90,9 +91,28 @@
       <p>Email [CONTACT EMAIL] to be removed from the waitlist, to correct your address, or to ask what we hold about you. We will act on it within 30 days. Depending on where you live, the law may give you further rights over your information, and you can use the same address to exercise them.</p>
     </section>
 
-    <section>
-      <h2>The extension is separate</h2>
-      <p>The Good Prompts extension is not publicly available yet, and the waitlist form collects no prompts. Before the extension is released it will get its own privacy policy, covering what it reads and where that text goes.</p>
+    <section id="extension">
+      <h2>The Chrome extension</h2>
+      <p>The Good Prompts extension rewrites the prompt in a chat box when you ask it to. This section describes exactly what it handles.</p>
+      <h3>What it reads, and when</h3>
+      <ul>
+        <li><strong>Only the text box, and only when you trigger it.</strong> When you click the Good Prompts button, the toolbar icon or the keyboard shortcut, the extension reads the text in the message box (or the part you have selected). It does not read the conversation, the assistant's answers or anything else on the page, and it reads nothing at any other time.</li>
+        <li><strong>Where the button appears.</strong> On ChatGPT, Claude and Gemini the extension loads with the page so it can show its button beside the message box. On every other site it has no access to the page until you click its toolbar icon or use the shortcut.</li>
+      </ul>
+      <h3>What is sent, and where</h3>
+      <ul>
+        <li><strong>Your draft prompt</strong>, the name of the chat site, and the optional notes you saved in the extension's settings (your role, usual audience and preferred style) are sent to the Good Prompts service at www.goodprompts.co.</li>
+        <li><strong>The service passes them to Anthropic</strong>, whose AI model writes the rewrite, and returns the result to your browser. Anthropic handles the text under its own terms as our service provider.</li>
+        <li><strong>A random install ID.</strong> Each installed copy creates a random identifier that is sent with each request. It contains no personal information and is used only to count that copy's free rewrites for the day.</li>
+      </ul>
+      <h3>What we keep</h3>
+      <ul>
+        <li><strong>We do not store your prompts.</strong> The draft and the rewrite are not written to our database or our logs.</li>
+        <li><strong>Daily counters.</strong> To enforce the daily limit we keep a count per install ID and per network address. The network address is scrambled before it is stored, and the counters are deleted after about a month.</li>
+        <li><strong>On your device</strong>, the extension stores your settings and its install ID in Chrome's local storage. Removing the extension deletes them.</li>
+      </ul>
+      <h3>What we do not do</h3>
+      <p>We do not sell or transfer this information to anyone, apart from the service providers named here who need it to produce the rewrite. We do not use it for advertising, for anything unrelated to rewriting your prompt, or to judge creditworthiness or for lending. The "try it" box on this website works the same way as the extension.</p>
     </section>
 
     <section>
