@@ -43,6 +43,13 @@ http.createServer((req, res) => {
   if (api[pathname]) { runFunction(api[pathname], req, res).catch(() => { res.statusCode = 500; res.end('Function error'); }); return; }
   // A working page for comparing logo options. It lives outside public/, so it is never deployed.
   if (pathname === '/logo-options') { serveFile(res, path.join(__dirname, 'logo-options.html')); return; }
+  // The extension's files, for trying its page script against a stand-in chat page (extension/dev-test.html).
+  if (pathname.startsWith('/_ext/')) {
+    const file = path.join(__dirname, 'extension', pathname.slice(6));
+    if (!file.startsWith(path.join(__dirname, 'extension') + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
+    serveFile(res, file);
+    return;
+  }
   // Same clean addresses as on Vercel: "/" is index.html and "/privacy" is privacy.html.
   let relative = pathname === '/' ? 'index.html' : pathname.slice(1);
   if (!path.extname(relative)) relative += '.html';

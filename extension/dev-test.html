@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Good Prompts button test</title>
+<style>
+  body { margin:0; font:15px/1.5 system-ui,sans-serif; background:#212121; color:#ececec; }
+  .chat { max-width:720px; margin:0 auto; padding:40px 20px 200px; }
+  .msg { background:#2f2f2f; border-radius:14px; padding:14px 16px; margin-bottom:14px; color:#cfcfcf; }
+  .composer { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); width:min(720px,calc(100vw - 40px)); background:#303030; border-radius:26px; padding:14px 18px; box-shadow:0 0 0 1px #444; }
+  #rich { min-height:24px; max-height:160px; overflow:auto; outline:none; white-space:pre-wrap; }
+  #rich:empty::before { content:"Ask anything"; color:#8e8e8e; }
+  textarea { width:100%; margin-top:18px; min-height:60px; background:#1a1a1a; color:#eee; border:1px solid #444; border-radius:8px; padding:8px; font:inherit; }
+  .send { position:absolute; right:12px; bottom:10px; width:32px; height:32px; border-radius:50%; background:#fff; }
+</style></head>
+<body>
+<div class="chat">
+  <p>Stand-in chat page for testing the in-page button. The model is faked here.</p>
+  <div class="msg">Earlier message in the conversation.</div>
+  <label>A plain text area (like some sites use):<textarea id="plain"></textarea></label>
+</div>
+<div class="composer"><div id="rich" contenteditable="true"></div><div class="send"></div></div>
+<script>
+  // Minimal stand-in for the extension's background worker.
+  window.__calls = [];
+  window.__goodPromptsForceButton = true;
+  window.chrome = { runtime: { id: 'test', onMessage: { addListener() {} },
+    sendMessage(message) { window.__calls.push(message); return new Promise((resolve) => setTimeout(() => resolve(
+      /shorter/.test(message.text)
+        ? { ok: true, result: { verdict: 'unchanged', text: message.text, guesses: [], blanks: 0, blankList: [] } }
+        : { ok: true, result: { verdict: 'rewritten', text: 'Write an email to my landlord about [date it broke]. Keep the tone firm but polite.', guesses: ['tone'], blanks: 1, blankList: ['[date it broke]'] } }), 600)); } } };
+</script>
+<script src="/_ext/content.js"></script>
+</body></html>

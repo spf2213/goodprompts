@@ -1,8 +1,9 @@
-// Page script. The background worker injects it into the active tab when the
-// user triggers the extension; it never runs on a page before that.
+// Page script. On the supported chat sites it loads with the page and shows a small Good Prompts
+// button beside the message box. Everywhere else, the background worker injects it only when the
+// user clicks the toolbar icon or presses the shortcut.
 //
-// It finds the focused text box, reads it, asks the background worker for a
-// rewrite, writes the result back and shows a toast. It never presses send.
+// Either way it reads the text box only when triggered: it reads the box, asks the background
+// worker for a rewrite, writes the result back and shows a toast. It never presses send.
 
 (() => {
   'use strict';
@@ -343,6 +344,11 @@
         action.run();
       };
     }
+    // Beside the in-page button when there is one, so the note appears where the person is looking
+    // and never covers the site's own send button. Otherwise the bottom-right corner.
+    const anchor = pillField?.el.isConnected && isVisible(pillField.el) ? pillField.el.getBoundingClientRect() : null;
+    box.style.bottom = anchor ? `${Math.max(20, Math.round(innerHeight - anchor.top + 10))}px` : '20px';
+    box.style.right = anchor ? `${Math.max(20, Math.round(innerWidth - anchor.right + BUTTON_SIZE + 12))}px` : '20px';
     box.style.opacity = '1';
     box.style.pointerEvents = 'auto';
     if (!sticky) toastTimer = setTimeout(hideToast, TOAST_MS);
@@ -397,10 +403,10 @@
     }
   }
 
-  async function trigger() {
+  async function trigger(chosenField = null) {
     if (state.busy) return;
 
-    const field = findField();
+    const field = chosenField || findField();
     if (!field) {
       toast('Click into your prompt first.');
       return;
@@ -422,6 +428,7 @@
     const draft = selection ? selection.text : full;
 
     state.busy = true;
+    showBusy(true);
     toast('Rewriting…', { sticky: true });
     try {
       let reply;
@@ -468,8 +475,153 @@
       toast(summary(result), { action: { label: 'Undo', run: undo } });
     } finally {
       state.busy = false;
+      showBusy(false);
     }
   }
+
+  // ---------- the in-page button ----------
+  // A small round button that sits just above the top-right corner of the message box whenever the
+  // box has text in it. It lives in its own shadow root on the page's root element, so it never
+  // touches the site's own markup or its editor. Styled through the CSSOM only (strict CSP safe).
+
+  const BUTTON_HOSTS = /(^|\.)(chatgpt\.com|chat\.openai\.com|claude\.ai|gemini\.google\.com|perplexity\.ai|manus\.im|grok\.com|copilot\.microsoft\.com|chat\.deepseek\.com|meta\.ai)$/;
+  const BUTTON_SIZE = 28;
+  let pill = null;        // { host, button, icon }
+  let pillField = null;   // the message box the button belongs to
+  let pillFrame = 0;
+  let spin = null;
+
+  function isPromptBox(field) {
+    if (!field || field.el instanceof HTMLInputElement) return false; // single-line inputs are search boxes, not prompts
+    const box = field.el.getBoundingClientRect();
+    return box.width >= 200;
+  }
+
+  function ensurePill() {
+    if (pill?.host.isConnected) return pill;
+    const host = document.createElement('div');
+    host.setAttribute('data-good-prompts-button', '');
+    const root = host.attachShadow({ mode: 'open' });
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.title = 'Rewrite with Good Prompts (Option+Shift+R)';
+    button.setAttribute('aria-label', 'Rewrite this prompt with Good Prompts');
+    Object.assign(button.style, {
+      all: 'unset',
+      position: 'fixed',
+      zIndex: '2147483646',
+      display: 'none',
+      boxSizing: 'border-box',
+      width: `${BUTTON_SIZE}px`,
+      height: `${BUTTON_SIZE}px`,
+      borderRadius: '50%',
+      background: '#111111',
+      color: '#f7f7f5',
+      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.14)',
+      cursor: 'pointer',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'transform 0.15s ease, opacity 0.15s ease',
+    });
+    // The Good Prompts mark: two brackets around a short line.
+    const NS = 'http://www.w3.org/2000/svg';
+    const icon = document.createElementNS(NS, 'svg');
+    icon.setAttribute('viewBox', '0 0 32 32');
+    icon.setAttribute('width', '16');
+    icon.setAttribute('height', '16');
+    icon.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', 'M11 6H6v20h5M21 6h5v20h-5M12 16h8');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '3');
+    path.setAttribute('stroke-linecap', 'square');
+    icon.appendChild(path);
+    button.appendChild(icon);
+    // Keep the cursor and selection in the message box when the button is pressed.
+    button.addEventListener('mousedown', (event) => event.preventDefault());
+    button.addEventListener('mouseenter', () => { button.style.transform = 'scale(1.08)'; });
+    button.addEventListener('mouseleave', () => { button.style.transform = ''; });
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const field = pillField;
+      if (!field) return;
+      trigger(field).catch((err) => {
+        state.busy = false;
+        showBusy(false);
+        toast(`Couldn't rewrite. ${String(err?.message || err).slice(0, 160)}`);
+      });
+    });
+    root.appendChild(button);
+    document.documentElement.appendChild(host);
+    pill = { host, button, icon };
+    return pill;
+  }
+
+  function placePill() {
+    pillFrame = 0;
+    const field = pillField;
+    if (!field || !field.el.isConnected || !isVisible(field.el) || !readAll(field).trim()) {
+      if (pill) pill.button.style.display = 'none';
+      return;
+    }
+    const { button } = ensurePill();
+    const box = field.el.getBoundingClientRect();
+    const left = Math.min(Math.max(box.right - BUTTON_SIZE - 4, 4), innerWidth - BUTTON_SIZE - 4);
+    // Just above the box's top-right corner; tucked inside the corner when there is no room above.
+    let top = box.top - BUTTON_SIZE - 6;
+    if (top < 4) top = box.top + 4;
+    if (top > innerHeight - BUTTON_SIZE - 4) { button.style.display = 'none'; return; }
+    button.style.left = `${Math.round(left)}px`;
+    button.style.top = `${Math.round(top)}px`;
+    button.style.display = 'flex';
+  }
+
+  function schedulePill() {
+    if (!pillFrame) pillFrame = requestAnimationFrame(placePill);
+  }
+
+  function showBusy(busy) {
+    if (!pill) return;
+    pill.button.style.opacity = busy ? '0.75' : '1';
+    if (busy && !spin) {
+      spin = pill.icon.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 900, iterations: Infinity });
+    } else if (!busy && spin) {
+      spin.cancel();
+      spin = null;
+    }
+    schedulePill();
+  }
+
+  function startButton() {
+    const adopt = (el) => {
+      const field = asField(el);
+      if (isPromptBox(field)) { pillField = field; schedulePill(); }
+    };
+    document.addEventListener('focusin', (event) => adopt(event.target), true);
+    document.addEventListener('input', schedulePill, true);
+    document.addEventListener('scroll', schedulePill, true);
+    addEventListener('resize', schedulePill);
+    // Chat pages move the box around without any event we can listen for, and replace it between
+    // conversations. A slow check keeps the button attached to the right place.
+    setInterval(() => {
+      if (!chrome.runtime?.id) return; // the extension was reloaded; this copy is retired
+      if (!pillField?.el.isConnected) {
+        pillField = null;
+        const host = location.hostname.replace(/^www\./, '');
+        for (const selector of SITE_SELECTORS[host] || []) {
+          const el = document.querySelector(selector);
+          const field = el && isVisible(el) ? asField(el) : null;
+          if (isPromptBox(field)) { pillField = field; break; }
+        }
+      }
+      schedulePill();
+    }, 700);
+    adopt(deepActiveElement());
+  }
+
+  if (BUTTON_HOSTS.test(location.hostname) || globalThis.__goodPromptsForceButton) startButton();
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (sender.id !== chrome.runtime.id || message?.type !== 'pr:trigger') return undefined;

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Good Prompts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Rewrites the prompt in the focused text box with one click. You still press send.",
   "minimum_chrome_version": "120",
   "permissions": [
@@ -43,5 +43,25 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://www.perplexity.ai/*",
+        "https://manus.im/*",
+        "https://grok.com/*",
+        "https://copilot.microsoft.com/*",
+        "https://chat.deepseek.com/*",
+        "https://www.meta.ai/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }
