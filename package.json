@@ -1,0 +1,17 @@
+{
+  "name": "good-prompts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Good Prompts early access waitlist server",
+  "packageManager": "npm@10.9.9",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js"
+  },
+  "dependencies": {
+    "mysql2": "3.24.6"
+  }
+}
