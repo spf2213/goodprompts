@@ -120,8 +120,16 @@
     .demo-grid .example p { font-size:15.5px; line-height:1.6; }
     .demo-grid .example .example-label { font-size:11.5px; line-height:1.4; }
     .demo-grid .example.after .example-note { font-size:13px; }
-    .demo-arrow { align-self:center; color:#8a8a8a; font-size:22px; line-height:1; transition:color .3s, translate .3s; }
-    .demo-arrow.pulse { color:#111; translate:5px 0; }
+    .example label.example-label { display:block; }
+    .example:focus-within { border-color:#111; }
+    .try-input { display:block; width:100%; min-height:8em; padding:0; border:0; outline:0; resize:none; background:transparent; color:#444; font:inherit; font-size:15.5px; line-height:1.6; }
+    .try-input::placeholder { color:#8a8a8a; }
+    .try-output { min-height:8em; white-space:pre-wrap; }
+    .demo-go { align-self:center; display:inline-flex; align-items:center; gap:7px; padding:11px 17px; border:0; border-radius:999px; background:#111; color:#fff; font-size:13px; font-weight:500; line-height:1; white-space:nowrap; transition:transform .25s, background .25s, opacity .25s; }
+    .demo-go:hover:not(:disabled) { transform:translateY(-1px); background:#222; }
+    .demo-go:disabled { opacity:.45; cursor:default; }
+    .demo-go.busy { animation:go-pulse 1s ease-in-out infinite; }
+    @keyframes go-pulse { 50% { opacity:.55; } }
     .example-note { transition:opacity .45s ease; }
     /* Typing cursor used in the example. It takes up no width, so the text never shifts. */
     .caret { display:inline-block; width:0; height:1.05em; margin:0 -1.5px 0 0; border-right:1.5px solid currentColor; vertical-align:text-bottom; animation:caret-blink 1s steps(1) infinite; }
@@ -132,8 +140,8 @@
     @media (max-width:760px) {
       dialog.wide .dialog-inner { padding:27px 23px; }
       .demo-grid { grid-template-columns:1fr; gap:12px; }
-      .demo-arrow { justify-self:center; transform:rotate(90deg); }
-      .demo-arrow.pulse { translate:0 5px; }
+      .demo-go { justify-self:center; }
+      .try-input, .try-output { min-height:5em; }
     }
     .guess { text-decoration:underline dotted #a8a8a8; text-underline-offset:4px; }
     .hp { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
@@ -312,11 +320,11 @@
       <div class="dialog-top"><button class="close" type="button" data-close aria-label="Close">×</button></div>
       <h2 id="example-title">One rough line, made clear.</h2>
       <div class="demo-grid">
-        <div class="example"><p class="example-label">You type</p><p>email to landlord heater broken 9 days reported twice want it fixed this week</p></div>
-        <span class="demo-arrow" aria-hidden="true">→</span>
-        <div class="example after"><p class="example-label">After one click</p><p>Write an email to my landlord. The heater has been broken for 9 days and I have reported it twice. Ask for it to be fixed this week. Keep the tone <span class="guess">firm but polite</span>, and keep the email <span class="guess">under 150 words</span>.</p><p class="example-note">Rewritten. Guessed: tone, length.</p></div>
+        <div class="example"><label class="example-label" for="try-input">You type</label><textarea id="try-input" class="try-input" rows="4" maxlength="3000" spellcheck="false" placeholder="Type a rough prompt, the way you'd normally write it"></textarea></div>
+        <button class="demo-go" type="button"><span>Rewrite</span><span aria-hidden="true">→</span></button>
+        <div class="example after"><p class="example-label">After one click</p><p class="try-output" aria-live="polite"></p><p class="example-note"></p></div>
       </div>
-      <p class="dialog-foot">The underlined words are guesses it made for you. Change them before you send. This example was written by hand to show the rules. Real rewrites will vary.</p>
+      <p class="dialog-foot">The first example is written by hand. Type your own rough prompt and press Rewrite to try the real thing, a few times a day. Your text goes to Good Prompts and its AI model to write the rewrite, and is not stored.</p>
     </div>
   </dialog>
 
@@ -645,74 +653,128 @@
         }
       }
 
-      // Example pop-up: types out the rough prompt, then writes the rewrite, as if someone were using Good Prompts.
+      // Example pop-up. It opens by typing a hand-written example, then becomes a real try-it box:
+      // whatever is in the left card is sent to the Good Prompts service and the rewrite is written out on the right.
       const demo = (() => {
         const dialog = document.getElementById('example');
-        const before = dialog.querySelector('.example:not(.after) p:not(.example-label)');
-        const after = dialog.querySelector('.example.after p:not(.example-label):not(.example-note)');
-        const note = dialog.querySelector('.example-note'), arrow = dialog.querySelector('.demo-arrow');
+        const input = dialog.querySelector('.try-input'), output = dialog.querySelector('.try-output');
+        const note = dialog.querySelector('.example-note'), go = dialog.querySelector('.demo-go');
+        const SAMPLE = 'email to landlord heater broken 9 days reported twice want it fixed this week';
+        const SAMPLE_OUT = { text:'Write an email to my landlord. The heater has been broken for 9 days and I have reported it twice. Ask for it to be fixed this week. Keep the tone firm but polite, and keep the email under 150 words.', marks:['firm but polite', 'under 150 words'], note:'Rewritten. Guessed: tone, length.' };
         const caret = document.createElement('span'); caret.className = 'caret';
         const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-        let run = 0, typed, rewritten;
-        // Split each piece of text into a shown part and an invisible part. The full text always
-        // takes up its space, so the cards never change size while the words appear.
-        const prepare = el => {
-          const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = [], parts = [];
+        let run = 0, busy = false;
+
+        // A random id for this browser, used only to count its free tries.
+        let webId = '';
+        try { webId = localStorage.getItem('good-prompts-web-id') || ''; } catch (_) {}
+        if (!/^web-[A-Za-z0-9-]{16,60}$/.test(webId)) {
+          webId = 'web-' + (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''));
+          try { localStorage.setItem('good-prompts-web-id', webId); } catch (_) {}
+        }
+
+        // Builds the output as text with the given phrases underlined.
+        const fill = (text, marks) => {
+          output.textContent = '';
+          let rest = text;
+          while (rest) {
+            let at = -1, hit = '';
+            for (const mark of marks) { const i = mark ? rest.indexOf(mark) : -1; if (i !== -1 && (at === -1 || i < at)) { at = i; hit = mark; } }
+            if (at === -1) { output.append(rest); break; }
+            if (at > 0) output.append(rest.slice(0, at));
+            const span = document.createElement('span'); span.className = 'guess'; span.textContent = hit; output.append(span);
+            rest = rest.slice(at + hit.length);
+          }
+        };
+        // Writes the output out a few characters at a time. The full text is in place from the start
+        // (invisible), so the card does not change size while the words appear.
+        const reveal = async (id, speed) => {
+          const walker = document.createTreeWalker(output, NodeFilter.SHOW_TEXT), nodes = [], parts = [];
           for (let node; (node = walker.nextNode());) nodes.push(node);
           for (const node of nodes) {
             const shown = document.createElement('span'), hidden = document.createElement('span');
-            hidden.style.visibility = 'hidden';
-            parts.push({ text:node.textContent, shown, hidden });
-            node.replaceWith(shown, hidden);
+            hidden.style.visibility = 'hidden'; hidden.textContent = node.textContent;
+            parts.push({ text:node.textContent, shown, hidden }); node.replaceWith(shown, hidden);
           }
-          return parts;
+          const total = parts.reduce((sum, part) => sum + part.text.length, 0);
+          const show = count => {
+            let left = count, active = parts[0];
+            for (const part of parts) {
+              const n = Math.max(0, Math.min(part.text.length, left));
+              part.shown.textContent = part.text.slice(0, n); part.hidden.textContent = part.text.slice(n);
+              if (n > 0) active = part; left -= n;
+            }
+            if (count < total && active) active.shown.after(caret); else caret.remove();
+          };
+          if (!reduced.matches) for (let i = speed; i < total; i += speed) { if (id !== run) return false; show(i); await wait(12); }
+          if (id !== run) return false;
+          show(total);
+          return true;
         };
-        const length = parts => parts.reduce((sum, part) => sum + part.text.length, 0);
-        const show = (parts, count, withCaret) => {
-          let left = count, active = parts[0];
-          for (const part of parts) {
-            const n = Math.max(0, Math.min(part.text.length, left));
-            part.shown.textContent = part.text.slice(0, n); part.hidden.textContent = part.text.slice(n);
-            if (n > 0) active = part;
-            left -= n;
-          }
-          if (withCaret) active.shown.after(caret); else if (caret.parentNode && parts.some(part => part.shown.nextSibling === caret)) caret.remove();
-        };
-        const finish = () => {
-          run++;
-          if (typed) show(typed, length(typed), false);
-          if (rewritten) show(rewritten, length(rewritten), false);
-          caret.remove(); note.style.opacity = ''; arrow.classList.remove('pulse');
-        };
+        const setBusy = on => { busy = on; go.classList.toggle('busy', on); go.disabled = on || !input.value.trim(); };
+
+        // Stops whatever is being typed and leaves the cards as they are.
+        const stop = () => { run++; caret.remove(); };
+
+        // The opening example: typed by hand, no request is made.
         async function play() {
-          typed = typed || prepare(before); rewritten = rewritten || prepare(after);
-          finish();
-          if (reduced.matches) return;
-          const id = run;
-          const live = () => id === run && dialog.open;
-          show(rewritten, 0, false); note.style.opacity = 0;
-          show(typed, 0, true);
-          await wait(250);
-          const text = typed.map(part => part.text).join('');
-          for (let i = 1; i <= text.length; i++) {
-            if (!live()) return;
-            show(typed, i, true);
-            await wait(text[i-1] === ' ' ? 28+Math.random()*24 : 10+Math.random()*20);
+          stop(); const id = run;
+          setBusy(false); note.textContent = ''; note.style.opacity = 0; output.textContent = '';
+          if (reduced.matches) { input.value = SAMPLE; }
+          else {
+            input.value = ''; await wait(250);
+            for (let i = 1; i <= SAMPLE.length; i++) {
+              if (id !== run || !dialog.open) return;
+              input.value = SAMPLE.slice(0, i);
+              await wait(SAMPLE[i-1] === ' ' ? 28+Math.random()*24 : 10+Math.random()*20);
+            }
+            await wait(300); if (id !== run || !dialog.open) return;
           }
-          await wait(200); if (!live()) return;
-          show(typed, text.length, false); arrow.classList.add('pulse');
-          await wait(280); if (!live()) return;
-          const total = length(rewritten);
-          for (let i = 4; i < total; i += 4) {
-            if (!live()) return;
-            show(rewritten, i, true);
-            await wait(13);
-          }
-          show(rewritten, total, false); arrow.classList.remove('pulse');
-          await wait(120); if (!live()) return;
-          note.style.opacity = '';
+          go.disabled = false;
+          fill(SAMPLE_OUT.text, SAMPLE_OUT.marks);
+          if (!(await reveal(id, 4))) return;
+          note.textContent = SAMPLE_OUT.note; note.style.opacity = '';
         }
-        dialog.addEventListener('close', finish);
+
+        // The real thing: send the left card to the service and write out what comes back.
+        async function rewriteNow() {
+          const text = input.value.trim();
+          if (!text || busy) return;
+          stop(); const id = run;
+          setBusy(true); output.textContent = ''; note.style.opacity = ''; note.textContent = 'Rewriting…';
+          let reply = null;
+          try {
+            const response = await fetch('/api/rewrite', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ text, site:'', installId:webId }) });
+            reply = await response.json();
+          } catch (_) { reply = { ok:false, message:'Could not reach Good Prompts. Check your connection and try again.' }; }
+          if (id !== run) { setBusy(false); return; }
+          if (!reply || !reply.ok || !reply.result) {
+            const fallback = { not_ready:'The live demo is not available right now.', busy:'Good Prompts is busy. Try again in a moment.', timeout:'That took too long. Try again.', too_long:'That is over 1,500 words. Try a shorter prompt.', refused:'This prompt could not be rewritten.' };
+            note.textContent = (reply && reply.code === 'rate_limit' && reply.message) || (reply && fallback[reply.code]) || (reply && !reply.code && reply.message) || 'Something went wrong. Try again.';
+            setBusy(false); return;
+          }
+          const result = reply.result, left = typeof reply.remaining === 'number' ? ` ${reply.remaining} ${reply.remaining === 1 ? 'try' : 'tries'} left today.` : '';
+          if (result.verdict !== 'rewritten') {
+            fill(text, []); note.textContent = '';
+            if (await reveal(id, 6)) note.textContent = 'Left as it is. This prompt is already clear, so Good Prompts would not change it.' + left;
+          } else {
+            fill(result.text, result.blankList || []); note.textContent = '';
+            if (await reveal(id, 4)) {
+              const bits = ['Rewritten.'];
+              if (result.guesses && result.guesses.length) bits.push(`Guessed: ${result.guesses.join(', ')}.`);
+              if (result.blanks) bits.push(`${result.blanks} ${result.blanks === 1 ? 'blank' : 'blanks'} for you to fill.`);
+              note.textContent = bits.join(' ') + left;
+            }
+          }
+          setBusy(false);
+        }
+
+        go.addEventListener('click', rewriteNow);
+        input.addEventListener('keydown', event => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); rewriteNow(); } });
+        // Typing in the box takes over from the opening example.
+        input.addEventListener('beforeinput', () => { if (!busy) stop(); });
+        input.addEventListener('input', () => { if (!busy) go.disabled = !input.value.trim(); });
+        dialog.addEventListener('close', stop);
         return { play };
       })();
 
