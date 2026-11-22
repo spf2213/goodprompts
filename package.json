@@ -2,15 +2,16 @@
   "name": "good-prompts",
   "version": "1.0.0",
   "private": true,
-  "description": "Good Prompts landing page and waitlist functions (deployed on Vercel)",
+  "description": "Good Prompts: landing page, waitlist and rewrite service (Vercel), plus the Chrome extension",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
     "dev": "node dev-server.js",
-    "check": "node --check dev-server.js && node --check lib/db.js && node --check lib/handlers.js"
+    "check": "node --check dev-server.js && node --check lib/db.js && node --check lib/handlers.js && node --check lib/rewrite-engine.js && node --check extension/background.js && node --check extension/content.js && node --check extension/options.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
     "@neondatabase/serverless": "^1.2.1"
   }
 }

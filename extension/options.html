@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Good Prompts: setup</title>
+  <style>
+    :root { color-scheme: light dark; --ink: #1c1c1e; --quiet: #6b6b70; --line: #d9d9de; --bg: #fafafa; --card: #fff; --accent: #2a5bd7; --bad: #b3261e; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #f2f2f4; --quiet: #a0a0a8; --line: #3a3a40; --bg: #18181a; --card: #222225; --accent: #8ab4ff; --bad: #ff8a80; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 640px; margin: 0 auto; padding: 40px 20px 80px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    h2 { font-size: 16px; margin: 0 0 12px; }
+    p { margin: 0 0 12px; }
+    .quiet { color: var(--quiet); font-size: 13px; }
+    section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-top: 20px; }
+    label { display: block; font-weight: 600; font-size: 13px; margin: 14px 0 4px; }
+    label.check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; font-size: 14px; }
+    label.check input { margin-top: 4px; }
+    input[type="text"], input[type="password"], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: inherit; font: inherit; }
+    textarea { min-height: 72px; resize: vertical; }
+    button { font: inherit; font-weight: 600; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--card); cursor: pointer; }
+    button.plain { background: transparent; color: var(--accent); }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .row { display: flex; gap: 12px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+    ol { margin: 0; padding-left: 20px; }
+    li { margin-bottom: 6px; }
+    kbd { font: 12px ui-monospace, Menlo, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+    pre { white-space: pre-wrap; word-break: break-word; margin: 12px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font: 13px/1.5 ui-monospace, Menlo, monospace; }
+    .bad { color: var(--bad); }
+    details { margin-top: 14px; }
+    summary { cursor: pointer; font-size: 13px; color: var(--quiet); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Good Prompts</h1>
+  <p class="quiet">A clearer prompt in one click. You still press send.</p>
+
+  <section>
+    <h2>1. Before you start</h2>
+    <label class="check" for="consent">
+      <input id="consent" type="checkbox">
+      <span>I understand that each time I trigger a rewrite, the text in the focused box (or my selection) and the context below are sent to the Good Prompts service, which passes them to Anthropic's AI model to write the rewrite. The text is not stored. Nothing is sent at any other time, and nothing else on the page is read.</span>
+    </label>
+    <p class="quiet" style="margin-top:12px">No account or API key is needed. Each installed copy gets a number of free rewrites a day.</p>
+  </section>
+
+  <section>
+    <h2>2. Standing context (optional)</h2>
+    <p class="quiet">Sent with every rewrite so the engine guesses less. Leave any of it blank.</p>
+    <label for="role">Your role</label>
+    <input id="role" type="text" placeholder="For example: history student, equity research analyst">
+    <label for="audience">Who usually reads the output</label>
+    <input id="audience" type="text" placeholder="For example: me, my professor, a finance team">
+    <label for="style">Preferred length and format</label>
+    <input id="style" type="text" placeholder="For example: short, plain prose, no bullet points">
+
+    <div class="row">
+      <button id="save" type="button">Save</button>
+      <span id="saved" class="quiet" role="status"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Try it</h2>
+    <p class="quiet">This sends the sample to Good Prompts with your saved settings. It counts as one of today's rewrites.</p>
+    <label for="sample">Sample prompt</label>
+    <textarea id="sample">write an email to my landlord, the heater has been broken 9 days and ive reported it twice</textarea>
+    <div class="row">
+      <button id="test" type="button" class="plain">Rewrite the sample</button>
+      <span id="timing" class="quiet" role="status"></span>
+    </div>
+    <pre id="output" hidden></pre>
+  </section>
+
+  <section>
+    <h2>4. Use it</h2>
+    <ol>
+      <li>Pin the extension: open the Extensions menu in Chrome's toolbar and click the pin beside Good Prompts.</li>
+      <li>Type a prompt in your AI chat (ChatGPT, Claude, Gemini and others) and leave the cursor in the box.</li>
+      <li>Click the icon, or press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> (<kbd>Option</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> on a Mac).</li>
+      <li>Read the rewrite and press send yourself. Trigger again on an untouched rewrite to undo it.</li>
+    </ol>
+    <p class="quiet" style="margin-top:12px">Change the shortcut at chrome://extensions/shortcuts.</p>
+  </section>
+</main>
+<script src="options.js"></script>
+</body>
+</html>

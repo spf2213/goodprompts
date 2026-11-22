@@ -13,7 +13,7 @@ const types = {
   '.html': 'text/html; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
   '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
 };
-const api = { '/api/waitlist': handlers.waitlist, '/api/health': handlers.health };
+const api = { '/api/waitlist': handlers.waitlist, '/api/health': handlers.health, '/api/rewrite': handlers.rewrite };
 
 // Gives a handler the same helpers Vercel provides: req.body, res.status() and res.json().
 async function runFunction(handler, req, res) {
